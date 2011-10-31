@@ -54,19 +54,9 @@ class Urlrewriter extends PluginsClassiques {
 		$rule = $pluginParams['rules']['contenu'];
 		if(empty($rule)) return false;
 		
-		$tokensFound = array();
-		$tokens = $this->retrieveTokens();
-		preg_match_all("`\%([a-z_^\%]{1,})\%`", $rule, $cut);
-		foreach($cut[1] as $token) {
-			if(array_key_exists($token, $tokens['contenu'])) {
-				$tokensFound[$token] = $tokens['contenu'][$token];
-			}
-		}
-		
 		$newUrl = $this->processUrl(
 			$rule, 
-			'contenu', 
-			$tokensFound, 
+			'contenu',
 			array(
 				'contenu' => $contenu->id,
 				'dossier' => $contenu->dossier, 
@@ -100,19 +90,10 @@ class Urlrewriter extends PluginsClassiques {
 		$pluginParams = unserialize($variable->valeur);
 		$rule = $pluginParams['rules']['dossier'];
 		if(empty($rule)) return false;
-		
-		$tokensFound = array();
-		$tokens = $this->retrieveTokens();
-		preg_match_all("`\%([a-z_^\%]{1,})\%`", $rule, $cut);
-		foreach($cut[1] as $token) {
-			if(array_key_exists($token, $tokens['dossier'])) {
-				$tokensFound[$token] = $tokens['dossier'][$token];
-			}
-		}
+
 		$newUrl = $this->processUrl(
 			$rule, 
 			'dossier', 
-			$tokensFound, 
 			array(
 				'dossier' => $dossier->id, 
 				'lang' => $lang
@@ -145,20 +126,10 @@ class Urlrewriter extends PluginsClassiques {
 		$pluginParams = unserialize($variable->valeur);
 		$rule = $pluginParams['rules']['produit'];
 		if(empty($rule)) return false; // aucune règle définie pour les produits => exit; 
-		
-		$tokensFound = array();
-		$tokens = $this->retrieveTokens();
-		preg_match_all("`\%([a-z_^\%]{1,})\%`", $rule, $cut);
-		foreach($cut[1] as $token) {
-			if(array_key_exists($token, $tokens['produit'])) {
-				$tokensFound[$token] = $tokens['produit'][$token];
-			}
-		}
 
 		$newUrl = $this->processUrl(
 			$rule, 
-			'produit', 
-			$tokensFound, 
+			'produit',
 			array(
 				'produit' => $produit->id,
 				'rubrique' => $produit->rubrique, 
@@ -192,19 +163,10 @@ class Urlrewriter extends PluginsClassiques {
 		$pluginParams = unserialize($variable->valeur);
 		$rule = $pluginParams['rules']['rubrique'];
 		if(empty($rule)) return false;
-		
-		$tokensFound = array();
-		$tokens = $this->retrieveTokens();
-		preg_match_all("`\%([a-z_^\%]{1,})\%`", $rule, $cut);
-		foreach($cut[1] as $token) {
-			if(array_key_exists($token, $tokens['rubrique'])) {
-				$tokensFound[$token] = $tokens['rubrique'][$token];
-			}
-		}
+
 		$newUrl = $this->processUrl(
 			$rule, 
 			'rubrique', 
-			$tokensFound, 
 			array(
 				'rubrique' => $rubrique->id, 
 				'lang' => $lang
@@ -218,7 +180,11 @@ class Urlrewriter extends PluginsClassiques {
 	/**
 	 * Génération de la liste des tokens disponibles
 	 */
-	public function retrieveTokens() {
+	public function retrieveTokens($force=false) {
+		
+		if(!empty($this->_tokens) && !$force) 
+			return $this->_tokens;
+		
 		$tokensLang = array(
 			'id_lang' => array(
 				'label' => 'ID de la langue',
@@ -377,7 +343,7 @@ class Urlrewriter extends PluginsClassiques {
 		$this->_tokens['rubrique'] = array_merge($this->_tokens['rubrique'], $tokensLang);
 		$this->_tokens['dossier'] = array_merge($this->_tokens['dossier'], $tokensLang);
 		$this->_tokens['contenu'] = array_merge($this->_tokens['contenu'], $tokensLang);
-		
+
 		// appel aux pipelines
 		$this->_tokens = $this->_callPipelines('urlrewriter_retrieveTokens', $this->_tokens);
 		return $this->_tokens;
@@ -424,32 +390,8 @@ class Urlrewriter extends PluginsClassiques {
 		foreach((array) $_POST['urlrewriter_rewrite'] as $objet => $regle) {
 			if(empty($regle)) continue;
 			if(empty($this->_tokens[$objet])) continue;
-
-			preg_match_all("`\%([a-z_^\%]{1,})\%`", $regle, $cut);
-
-			$tokensFound = array();
-			$tokensRequiredFound = array();
-			foreach($cut[1] as $token) {
-				if(array_key_exists($token, $this->_tokens[$objet])) {
-					$tokensFound[$token] = $this->_tokens[$objet][$token];
-					if(!empty($this->_tokens[$objet][$token]['in_required'])) {
-						$tokensRequiredFound[] = $token;
-					}
-				}
-			}
-			if(empty($tokensFound)) {
-				$this->error = 'Vous devez spécifier un marqueur pour les objets de type ' . $objet;
-				return false;
-				break;
-			}
-			if(empty($tokensRequiredFound)) {
-				$this->error = 'Vous devez spécifier un marqueur unique pour les objets de type ' . $objet . ' : ';
-				foreach($this->_tokens[$objet] as $tokenName => $tokenData) {
-					if($tokenData['in_required']) $this->error.= '<br/>-' . $tokenName;
-				}
-				return false;
-				break;
-			}
+		
+			if($this->_verifyInputTokens($regle, $objet) === false) return false;
 			
 			// Enregistrement en BDD des nouvelles règles
 			$variable = new Variable('urlrewriter_params');
@@ -467,12 +409,12 @@ class Urlrewriter extends PluginsClassiques {
 						$contextVars['lang'] = $lang->id;
 						
 						// Ajout à la liste des URLs calculées
-						$rewritings[$objet][] = $this->processUrl(
+						$result = $this->processUrl(
 							$regle, 
-							$objet, 
-							$tokensFound, 
+							$objet,
 							$contextVars
 						);
+						if($result !== false) $rewritings[$objet][] = $result; 
 					}
 				}
 			}
@@ -481,11 +423,11 @@ class Urlrewriter extends PluginsClassiques {
 		return $rewritings;
 	}
 	
-	public function processUrl($regle, $object, $tokens, $context) {
-		/*echo '<pre>';
-		var_dump(func_get_arg($arg_num));
-		echo '</pre>';
-		exit();*/
+	public function processUrl($rule, $object, $context) {
+
+		$tokens = $this->_verifyInputTokens($rule, $object); 
+		if($tokens === false) return false;
+
 		$search = array();
 		$replacements = array();
 
@@ -501,7 +443,7 @@ class Urlrewriter extends PluginsClassiques {
 		}
 
 		// assemblage de l'URL rewritée, puis appel aux pipelines
-		$urlRewrited = str_replace($search, $replacements, $regle);
+		$urlRewrited = str_replace($search, $replacements, $rule);
 		$urlRewrited = $this->_callPipelines('urlrewriter_santitizeUrl', $urlRewrited);
 		// assemblage de l'URL non rewritée					
 		$urlNormal = $this->_callPipelines('urlrewriter_unrewritedUrl', array('objet' => $objet, 'context' => $context));
@@ -513,6 +455,35 @@ class Urlrewriter extends PluginsClassiques {
 		));
 	}
 	
+	private function _verifyInputTokens($regle, $objet) {
+		preg_match_all("`\%([a-z_^\%]{1,})\%`", $regle, $cut);
+		$tokens = $this->retrieveTokens();
+		$tokensFound = array();
+		$tokensRequiredFound = array();
+		
+		foreach($cut[1] as $token) {
+			if(array_key_exists($token, $tokens[$objet])) {
+				$tokensFound[$token] = $tokens[$objet][$token];
+				if(!empty($tokens[$objet][$token]['in_required'])) {
+					$tokensRequiredFound[] = $token;
+				}
+			}
+		}
+		if(empty($tokensFound)) {
+			$this->error = 'Vous devez spécifier un marqueur pour les objets de type ' . $objet;
+			return false;
+			break;
+		}
+		if(empty($tokensRequiredFound)) {
+			$this->error = 'Vous devez spécifier un marqueur unique pour les objets de type ' . $objet . ' : ';
+			foreach($tokens[$objet] as $tokenName => $tokenData) {
+				if($tokenData['in_required']) $this->error.= '<br/>-' . $tokenName;
+			}
+			return false;
+			break;
+		}
+		return $tokensFound;
+	}
 
 	/**
 	 * Traitement de l'étape 2

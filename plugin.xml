@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding='UTF-8'?>
 <plugin>
 	<nom>Urlrewriter</nom>
- 	<version>0.1</version>
+ 	<version>0.3</version>
  	<prefix>urlrewriter</prefix>
 	<type>classique</type>
  	<auteur>Scopika</auteur>
