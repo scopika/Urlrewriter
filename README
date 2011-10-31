@@ -1,0 +1,7 @@
+Ce plugin permet de calculer les URLS rewritées des objets Thelia selon des motifs définis par l'utilisateur.
+
+Veuillez simplement glisser le répertoire urlrewriter/ dans le dossier client/plugins/ de votre Thelia.
+Vous pouvez aussi utiliser l'assistant d'import de plugins dans Configuration/Gestion des plugins.
+Activez-le ensuite dans le menu Configuration/Gestion des plugins dans votre interface d'administration
+
+Auteur : Cyril Batillat, Scopika.com

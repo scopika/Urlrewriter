@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<plugin>
+	<nom>Urlrewriter</nom>
+ 	<version>0.1</version>
+ 	<prefix>urlrewriter</prefix>
+	<type>classique</type>
+ 	<auteur>Scopika</auteur>
+ 	<thelia>1.5.0</thelia>
+ 	<description>
+ 		Outil pour recalculer en masse les URLs rewritées
+ 		&lt;br/&gt; Création : &lt;a href="http://www.scopika.com" style="color:#FF0066"&gt;Agence Scopika&lt;/a&gt;
+ 	</description>
+	<documentation>README</documentation>
+ 	<etat>production</etat>
+</plugin>

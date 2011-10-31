@@ -1,0 +1,1 @@
+<link href="../client/plugins/urlrewriter/css/urlrewriter.css" rel="stylesheet" type="text/css" />
