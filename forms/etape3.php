@@ -1,6 +1,7 @@
 <?php
 require_once 'pre.php';
 require_once 'auth.php';
+autorisation("urlrewriter");
 ?>
 
-OK!
+<p>Les URLs ont bien été enregistrées.</p>

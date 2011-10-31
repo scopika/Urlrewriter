@@ -16,11 +16,204 @@ class Urlrewriter extends PluginsClassiques {
 	
 	// Liste des tokens disponibles pour les règles de rewriting
 	private $_tokens = null;
-	// Liste d'objets à ne pas prendre en compte dans le calcul
-	// des rewritings.
-	private $_excludedObjects = array();
 	// Erreur
 	public $error = null;
+	
+	/**
+	 * @see PluginsClassiques::init()
+	 */
+	function init() {
+		$variable = new Variable();
+		$variable->nom = 'urlrewriter_params';
+		$variable->valeur = serialize(array('rules' => array()));
+ 		$variable->protege = 1;
+ 		$variable->cache = 1;
+ 		$variable->add();
+	}
+	
+	/**
+	 * Pipeline modcont() : modification d'un contenu
+	 * @param Contenu $contenu
+	 */
+	function modcont($contenu) {
+		if(!$lang) $lang=1;
+		
+		$req = $this->query('
+			SELECT id 
+			FROM ' . Reecriture::TABLE . ' 
+			WHERE fond=\'contenu\' 
+				AND param=\'&id_contenu=' . $contenu->id . '&id_dossier=' . $contenu->dossier . '\'
+				AND lang=' . $lang . '
+				AND actif=1
+			ORDER BY id DESC 
+			LIMIT 0,1');
+		$row=mysql_fetch_assoc($req);
+		
+		$variable = new Variable('urlrewriter_params');
+		$pluginParams = unserialize($variable->valeur);
+		$rule = $pluginParams['rules']['contenu'];
+		if(empty($rule)) return false;
+		
+		$tokensFound = array();
+		$tokens = $this->retrieveTokens();
+		preg_match_all("`\%([a-z_^\%]{1,})\%`", $rule, $cut);
+		foreach($cut[1] as $token) {
+			if(array_key_exists($token, $tokens['contenu'])) {
+				$tokensFound[$token] = $tokens['contenu'][$token];
+			}
+		}
+		
+		$newUrl = $this->processUrl(
+			$rule, 
+			'contenu', 
+			$tokensFound, 
+			array(
+				'contenu' => $contenu->id,
+				'dossier' => $contenu->dossier, 
+				'lang' => $lang
+			)
+		);
+		if(!empty($newUrl['urlRewrited'])) {
+			$req_upd = $this->query('UPDATE ' . Reecriture::TABLE . ' SET url=\'' . $newUrl['urlRewrited'] . '\' WHERE id=' . $row['id']);
+		}
+	}
+	
+	/**
+	 * Pipeline moddos() : modification d'un dossier
+	 * @param Dossier $dossier
+	 */
+	function moddos($dossier) {
+		if(!$lang) $lang=1;
+		
+		$req = $this->query('
+			SELECT id 
+			FROM ' . Reecriture::TABLE . ' 
+			WHERE fond=\'dossier\' 
+				AND param=\'&id_dossier=' . $dossier->id . '\'
+				AND lang=' . $lang . '
+				AND actif=1
+			ORDER BY id DESC 
+			LIMIT 0,1');
+		$row=mysql_fetch_assoc($req);
+		
+		$variable = new Variable('urlrewriter_params');
+		$pluginParams = unserialize($variable->valeur);
+		$rule = $pluginParams['rules']['dossier'];
+		if(empty($rule)) return false;
+		
+		$tokensFound = array();
+		$tokens = $this->retrieveTokens();
+		preg_match_all("`\%([a-z_^\%]{1,})\%`", $rule, $cut);
+		foreach($cut[1] as $token) {
+			if(array_key_exists($token, $tokens['dossier'])) {
+				$tokensFound[$token] = $tokens['dossier'][$token];
+			}
+		}
+		$newUrl = $this->processUrl(
+			$rule, 
+			'dossier', 
+			$tokensFound, 
+			array(
+				'dossier' => $dossier->id, 
+				'lang' => $lang
+			)
+		);
+		if(!empty($newUrl['urlRewrited'])) {
+			$req_upd = $this->query('UPDATE ' . Reecriture::TABLE . ' SET url=\'' . $newUrl['urlRewrited'] . '\' WHERE id=' . $row['id']);
+		}
+	}
+	
+	/**
+	 * Pipeline modprod() : modification d'un produit
+	 * @param Produit $produit
+	 */
+	function modprod($produit) {
+		if(!$lang) $lang=1;
+		
+		$reqUrl = $this->query('
+			SELECT id 
+			FROM ' . Reecriture::TABLE . ' 
+			WHERE fond=\'produit\' 
+				AND param=\'&id_produit=' . $produit->id . '&id_rubrique=' . $produit->rubrique . '\'
+				AND lang=' . $lang . '
+				AND actif=1
+			ORDER BY id DESC 
+			LIMIT 0,1');
+		$actualUrl = mysql_fetch_assoc($reqUrl);
+
+		$variable = new Variable('urlrewriter_params');
+		$pluginParams = unserialize($variable->valeur);
+		$rule = $pluginParams['rules']['produit'];
+		if(empty($rule)) return false; // aucune règle définie pour les produits => exit; 
+		
+		$tokensFound = array();
+		$tokens = $this->retrieveTokens();
+		preg_match_all("`\%([a-z_^\%]{1,})\%`", $rule, $cut);
+		foreach($cut[1] as $token) {
+			if(array_key_exists($token, $tokens['produit'])) {
+				$tokensFound[$token] = $tokens['produit'][$token];
+			}
+		}
+
+		$newUrl = $this->processUrl(
+			$rule, 
+			'produit', 
+			$tokensFound, 
+			array(
+				'produit' => $produit->id,
+				'rubrique' => $produit->rubrique, 
+				'lang' => $lang
+			)
+		);
+		if(!empty($newUrl['urlRewrited'])) {
+			$req_upd = $this->query('UPDATE ' . Reecriture::TABLE . ' SET url=\'' . $newUrl['urlRewrited'] . '\' WHERE id=' . $actualUrl['id']);
+		}
+	}
+	
+	/**
+	 * Pipeline modrub() : modification d'une rubrique
+	 * @param Rubrique $rubrique
+	 */
+	function modrub($rubrique) {
+		if(!$lang) $lang=1;
+		
+		$req = $this->query('
+			SELECT id 
+			FROM ' . Reecriture::TABLE . ' 
+			WHERE fond=\'rubrique\' 
+				AND param=\'&id_rubrique=' . $rubrique->id . '\'
+				AND lang=' . $lang . '
+				AND actif=1
+			ORDER BY id DESC 
+			LIMIT 0,1');
+		$row=mysql_fetch_assoc($req);
+		
+		$variable = new Variable('urlrewriter_params');
+		$pluginParams = unserialize($variable->valeur);
+		$rule = $pluginParams['rules']['rubrique'];
+		if(empty($rule)) return false;
+		
+		$tokensFound = array();
+		$tokens = $this->retrieveTokens();
+		preg_match_all("`\%([a-z_^\%]{1,})\%`", $rule, $cut);
+		foreach($cut[1] as $token) {
+			if(array_key_exists($token, $tokens['rubrique'])) {
+				$tokensFound[$token] = $tokens['rubrique'][$token];
+			}
+		}
+		$newUrl = $this->processUrl(
+			$rule, 
+			'rubrique', 
+			$tokensFound, 
+			array(
+				'rubrique' => $rubrique->id, 
+				'lang' => $lang
+			)
+		);
+		if(!empty($newUrl['urlRewrited'])) {
+			$req_upd = $this->query('UPDATE ' . Reecriture::TABLE . ' SET url=\'' . $newUrl['urlRewrited'] . '\' WHERE id=' . $row['id']);
+		}
+	}
 
 	/**
 	 * Génération de la liste des tokens disponibles
@@ -224,7 +417,7 @@ class Urlrewriter extends PluginsClassiques {
 		if(empty($_POST['urlrewriter_rewrite'])) return false;
 		if(empty($this->_tokens)) $this->retrieveTokens();
 		
-		$rewritings = array(); // tabeau qui contiendra toutes les URLs calculées
+		$rewritings = array(); // tableau qui contiendra toutes les URLs calculées
 		
 		$langues = CacheBase::getCache()->mysql_query('SELECT id FROM ' . Lang::TABLE, $this->link);
 
@@ -258,50 +451,74 @@ class Urlrewriter extends PluginsClassiques {
 				break;
 			}
 			
-			// Appel aux modules pour obtenir la liste des tuples sur lesquels travailler
-			$req_objects = $this->_callPipelines('urlrewriter_reqObjects', $objet);
-			while($row = mysql_fetch_assoc($req_objects)) {
-				foreach($langues as $lang) {
-					$search = array();
-					$replacements = array();
+			// Enregistrement en BDD des nouvelles règles
+			$variable = new Variable('urlrewriter_params');
+			$pluginParams = unserialize($variable->valeur);
+			$pluginParams['rules'][$objet] = $regle;
+			$variable->valeur = serialize($pluginParams);
+			$variable->maj();
 
-					$contextVars = $row;
-					$contextVars['lang'] = $lang->id;
-
-					foreach($tokensFound as $token => $tokenData) {
-						$calculatedToken = $this->_calculateToken(
-							$objet,
-							$token,
-							$tokenData,
+			if(!empty($_POST['urlrewriter_process'][$objet])) {
+				// Appel aux modules pour obtenir la liste des tuples sur lesquels travailler
+				$req_objects = $this->_callPipelines('urlrewriter_reqObjects', $objet);
+				while($row = mysql_fetch_assoc($req_objects)) {
+					foreach($langues as $lang) {					
+						$contextVars = $row;
+						$contextVars['lang'] = $lang->id;
+						
+						// Ajout à la liste des URLs calculées
+						$rewritings[$objet][] = $this->processUrl(
+							$regle, 
+							$objet, 
+							$tokensFound, 
 							$contextVars
 						);
-						$search[] = '%' . $token . '%';
-						$replacements[] = trim($calculatedToken, ' ');
 					}
-
-					// assemblage de l'URL rewritée, puis appel aux pipelines
-					$urlRewrited = str_replace($search, $replacements, $regle);
-					$urlRewrited = $this->_callPipelines('urlrewriter_santitizeUrl', $urlRewrited);
-					// assemblage de l'URL non rewritée					
-					$urlNormal = $this->_callPipelines('urlrewriter_unrewritedUrl', array('objet' => $objet, 'context' => $contextVars));
-					// Ajout à la liste des URLs calculées
-					$rewritings[$objet][] = array(
-						'urlRewrited' => $urlRewrited, 
-						'urlNormal' => $urlNormal,
-						'context' => $contextVars
-					);
 				}
 			}
 		}
-		
 		$_SESSION['urlrewriter']['rewritings'] = $rewritings;
 		return $rewritings;
 	}
 	
+	public function processUrl($regle, $object, $tokens, $context) {
+		/*echo '<pre>';
+		var_dump(func_get_arg($arg_num));
+		echo '</pre>';
+		exit();*/
+		$search = array();
+		$replacements = array();
+
+		foreach($tokens as $token => $tokenData) {
+			$calculatedToken = $this->_calculateToken(
+				$object,
+				$token,
+				$tokenData,
+				$context
+			);
+			$search[] = '%' . $token . '%';
+			$replacements[] = trim($calculatedToken, ' ');
+		}
+
+		// assemblage de l'URL rewritée, puis appel aux pipelines
+		$urlRewrited = str_replace($search, $replacements, $regle);
+		$urlRewrited = $this->_callPipelines('urlrewriter_santitizeUrl', $urlRewrited);
+		// assemblage de l'URL non rewritée					
+		$urlNormal = $this->_callPipelines('urlrewriter_unrewritedUrl', array('objet' => $objet, 'context' => $context));
+
+		return (array(
+			'urlRewrited' => $urlRewrited, 
+			'urlNormal' => $urlNormal,
+			'context' => $context
+		));
+	}
+	
+
 	/**
 	 * Traitement de l'étape 2
 	 */
 	private function _verifFormStep2() {
+
 		if(empty($_SESSION['urlrewriter']['rewritings']) || count($_SESSION['urlrewriter']['rewritings']) == 0) {
 			$this->error = 'Aucune URL à traiter';
 			return false;
@@ -503,6 +720,18 @@ class Urlrewriter extends PluginsClassiques {
 	 * @return array $params
 	 */
 	public function urlrewriter_calculateToken_contenu_url_dossier($params) {
+		
+		// Dossiers à exclure ?
+		if(!empty($params['tokens']['dossier']['@excluded'])) {
+			if(is_array($params['tokens']['dossier']['@excluded'])) {
+				if(in_array($params['context']['dossier'], $params['tokens']['dossier']['@excluded'])) 
+					return $params;
+			} elseif(is_string($params['tokens']['dossier']['@excluded'])) {
+				if($params['context']['dossier'] == intval($params['tokens']['dossier']['@excluded']))
+					return $params;
+			}
+		}
+		
 		$sql = '
 			SELECT url
             FROM ' . Reecriture::TABLE . '
@@ -613,12 +842,12 @@ class Urlrewriter extends PluginsClassiques {
 	            	$idDossier = $row->parent;
 	            	
 	            	// Dossiers à exclure ?
-	            	if(!empty($this->_tokens['dossier']['@excluded'])) {
-	            		if(is_array($this->_tokens['dossier']['@excluded'])) {
-	            			if(in_array($row->id, $this->_tokens['dossier']['@excluded'])) 
+	            	if(!empty($params['tokens']['dossier']['@excluded'])) {
+	            		if(is_array($params['tokens']['dossier']['@excluded'])) {
+	            			if(in_array($row->id, $params['tokens']['dossier']['@excluded'])) 
 	            				continue;	            			
-	            		} elseif(is_string($this->_tokens['dossier']['@excluded'])) {
-            				if($row->id == intval($this->_tokens['dossier']['@excluded']))
+	            		} elseif(is_string($params['tokens']['dossier']['@excluded'])) {
+            				if($row->id == intval($params['tokens']['dossier']['@excluded']))
             					continue;
             			}
 	            	}
@@ -690,6 +919,7 @@ class Urlrewriter extends PluginsClassiques {
 				$params = array(
 					'tokenParams' => $tokenParams,
 					'context' => $contextVars,
+					'tokens' => $this->_tokens,
 					'return' => $return
 				);
 				$params = $this->_callPipelines(

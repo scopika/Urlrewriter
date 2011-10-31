@@ -1,13 +1,14 @@
 <?php
 require_once 'pre.php';
 require_once 'auth.php';
-//var_dump($urlrewriterVars['rewritings']);
+autorisation("urlrewriter");
 
 foreach((array) $urlrewriterVars['rewritings'] as $objet => $rewritings) {
 	?>
 	<form action="" method="post">
 	<p style="text-align:right">
 		<input type="hidden" name="urlrewriter_step" value="2"/>
+		<input type="hidden" name="urlrewriter[rules][<?php echo $objet; ?>]" value="<?php echo $_POST['urlrewriter_rewrite'][$objet]; ?>"/>
 		<input type="submit" name="" value="Valider"/>
 	</p>
 	<table summary="<?php echo $objet; ?>" id="urlrewriter_recap">
