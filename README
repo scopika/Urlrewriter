@@ -1,7 +1,76 @@
-Ce plugin permet de calculer les URLS rewritées des objets Thelia selon des motifs définis par l'utilisateur.
+-------- DESCRIPTION ------
+Ce plugin permet de générer des URLS rewritées pour les objets Thelia selon des motifs personnalisables.
 
+
+-------- INSTALLATION ------
 Veuillez simplement glisser le répertoire urlrewriter/ dans le dossier client/plugins/ de votre Thelia.
 Vous pouvez aussi utiliser l'assistant d'import de plugins dans Configuration/Gestion des plugins.
 Activez-le ensuite dans le menu Configuration/Gestion des plugins dans votre interface d'administration
 
-Auteur : Cyril Batillat, Scopika.com
+Configurez ensuite les différents motifs de rewriting pour les rubriques, produits, dossiers et contenus
+via le menu Modules > Urlrewriter.
+
+Le rewriting doit être activé dans Thelia : Configuration > Gestion des variables > rewrite : 1
+Le fichier htaccess, fourni par défaut par Thelia dans le dossier /template, doit être déposé à la racine
+et renommé en .htaccess
+
+Pour utiliser des URL arborescentes  (fonctionnalité proposée par la version payante du plugin. Voir plus bas.),
+le fichier .htaccess doit être modifié comme ceci :
+
+# AVANT :
+<IfModule mod_rewrite.c>
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([a-zA-Z_.\-0-9]+)$ index.php?url=$1 [L,QSA]
+</IfModule>
+
+# APRES :
+<IfModule mod_rewrite.c>
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} -s [OR]
+RewriteCond %{REQUEST_FILENAME} -l [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^.*$ - [NC,L]
+RewriteRule (^.*$) index.php?url=$1 [NC,L]
+</IfModule>
+
+
+--------- IMPORTANT : DIFFERENCES ENTRE VERSION GRATUITE/PAYANTE --------
+Certaines fonctionnalités avancées ne sont disponibles que dans la version premium du plugin :
+
+1. Personnalisation des URLS au cas par cas
+La version gratuite du plugin permet de définir des motifs d'URL sur les différents objets Thelia : rubriques, produits, dossiers et contenus.
+La version payante va plus loin, en permettant de personnaliser la réécriture d'URL sur chaque rubrique, produit, dossier, ou contenu de Thelia.
+
+2. Génération d'URL arborescentes
+Exemples :
+http://monsite.fr/rubrique1/rubrique1.1/produit1
+http://monsite.fr/rubrique1/rubrique1.2/produit2
+
+3. Utilisation de marqueurs de langues dans les URL
+Exemples :
+http://monsite.fr/fr/ma-page
+http://monsite.fr/en/my-page
+
+4. Exclusion de rubriques et de dossiers dans le calcul d'URL.
+Explication : il arrive que certains dossiers/rubriques soient créés uniquement pour organiser les contenus.
+Ces dossiers ne doivent pas être pris en compte dans le calcul des URL arborescentes.
+Exemple : imaginez l'arborescence suivante :
+- Menu Principal (dossier)
+---- L'entreprise (dossier)
+-------- Présentation (contenu)
+Si les URLS des contenus sont configurées pour être arborescentes, l'URL du contenu "Présentation" devrait ressembler à
+http://monsite.fr/menu-principal/entreprise/presentation
+On ne souhaite pas voir apparitre le dossier "Menu principal" dans les URL.
+La fonction d'exclusion permet de configurer les dossiers et les rubriques à exclure lors du calcul des URL.
+
+--------- CONTACT --------
+Pour plus d'infos sur la version payante du plugin Urlrewriter, merci de contacter l'équipe Scopika :
+Mail : contact@scopika.com
+Tel : 04 82 53 50 43
+http://scopika.com
+
+
+--------- AUTEUR --------
+Cyril Batillat, Scopika.com

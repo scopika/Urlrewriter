@@ -1,7 +1,21 @@
+.urlrewriter_container h3 {margin-top:10px}
 .urlrewriter_h2 {padding:0; margin:30px 0 5px 0; border-bottom:1px dotted #1D364E}
-.urlrewriter_inputToken {width:400px}
-ul.urlrewriter_tokenlist {}
+.urlrewriter_inputToken {width:250px}
 ul.urlrewriter_tokenlist li {margin-left:20px; padding-left:0px; list-style-type:circle; line-height:1.7em}
 .urlrewriter_token {font-weight:bold}
 table#urlrewriter_recap {border:1px solid #ccc; border-collapse:collapse;}
 table#urlrewriter_recap td, table#urlrewriter_recap th {padding:5px; border:1px solid #ccc}
+
+/* Crédits scopika */
+.scopika_credits {margin-left:10px}
+.scopika_credits, .scopika_credits a {color:#fff; font-weight:none; font-style:italic;}
+.scopika_credits a {text-decoration:underline; padding-left:0 !important}
+
+/* Formulaire de modif Objet */
+#urlrewriter_pliant table {margin:0; border-collapse:collapse;}
+#urlrewriter_pliant table tr td{/*background:red;*/border:1px solid #ccc; vertical-align:top}
+
+.urlrewriter_warning {color:#3A87AD; background:#D9EDF7 url(../img/warning.png) no-repeat 5px 5px; border:1px solid #BCE8F1; padding:5px 5px 5px 25px !important; line-height:1.5em}
+.urlrewriter_warning a {color:#3A87AD;}
+.urlrewriter_notice {color:#3A87AD; background:#D9EDF7 url(../img/notice.png) no-repeat 5px 5px; border:1px solid #BCE8F1; padding:5px 5px 5px 25px !important; line-height:1.5em}
+.urlrewriter_notice a {color:#3A87AD;}

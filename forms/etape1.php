@@ -5,34 +5,40 @@ autorisation("urlrewriter");
 
 $variable = new Variable('urlrewriter_params');
 $pluginParams = unserialize($variable->valeur);
+$tokens = $urlrewriterObj->getTokens();
+?>
 
-$tokens = $urlrewriterObj->retrieveTokens();
+<p class="urlrewriter_warning"><strong>Avant toute modification, nous vous conseillons d'effectuer une sauvegarde de votre base de données.</strong></p>
+<?php
 foreach ((array) $tokens as $objet => $tokens) {
-	echo $rule = '';
-	if(!empty($pluginParams['rules'][$objet])) $rule = $pluginParams['rules'][$objet];	
+	$rule = '';
+	if(!empty($pluginParams['rules'][$objet])) $rule = $pluginParams['rules'][$objet];
 	?>
 	<h2 class="urlrewriter_h2"><?php echo ucfirst($objet); ?></h2>
-	
-	<h3>Motifs disponibles :</h3> 
-	<ul class="urlrewriter_tokenlist">
-	<?php
-	foreach((array) $tokens as $key => $token) {
-		echo '<li><span class="urlrewriter_token">%' . $key . '%</span> : ' . $token['label'] . '</li>';
-	}
-	?>
-	</ul>
-	
+
 	<form action="" method="post">
 	<p>
 		<input type="hidden" name="urlrewriter_step" value="1"/>
-		<label for="urlrewriter_rewrite[<?php echo $objet; ?>]">Motif de rewriting :</label>
-		<input type="text" name="urlrewriter_rewrite[<?php echo $objet; ?>]" value="<?php echo $rule; ?>" id="urlrewriter_rewrite[<?php echo $objet; ?>]" class="urlrewriter_inputToken"/>
+        <input type="hidden" name="urlrewriter_object" value="<?php echo $objet; ?>"/>
+		<label for="urlrewriter_rule">Motif de rewriting :</label>
+		<input type="text" name="urlrewriter_rule" value="<?php echo $rule; ?>" id="urlrewriter_rule" class="urlrewriter_inputToken"/>
+        <input type="submit" value="Enregistrer et recalculer les URL"/>
+        <br/>Ex : %arbo%/%titre%/
 	</p>
-	<p>
-		<label for="urlrewriter_process[<?php echo $objet; ?>]">Recalculer les URL maintenant</label>
-		<input type="checkbox" name="urlrewriter_process[<?php echo $objet; ?>]" id="urlrewriter_process[<?php echo $objet; ?>]" value="1"/>
-		<br/><input type="submit" value="Enregistrer"/>
-	</p>
-	</form>	
+	</form>
+
+    <h3>Motifs disponibles :</h3>
+    <p class="urlrewriter_notice">
+        <a href="mailto:contact@scopika.com">La version premium</a> du plugin ajoute d'autres motifs de rewriting puissants : <br/>
+        <strong>%arbo%</strong> : pour générer des URL arborescentes<br/>
+        <strong>%lang%</strong> : pour générer des URL dépendantes de la langue. Ex : http://monsite.com/fr/ma-page, http://monsite.com/en/my-page
+    </p>
+    <ul class="urlrewriter_tokenlist">
+        <?php
+        foreach((array) $tokens as $token) {
+            echo '<li><span class="urlrewriter_token">%' . $token->getToken() . '%</span> : ' . $token->getDescription() . '</li>';
+        }
+        ?>
+    </ul>
 	<?php
 }
