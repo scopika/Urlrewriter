@@ -28,6 +28,8 @@ RewriteRule ^([a-zA-Z_.\-0-9]+)$ index.php?url=$1 [L,QSA]
 # APRES :
 <IfModule mod_rewrite.c>
 RewriteEngine on
+# RewriteBase à adapter en fonction de votre configuration : 
+# RewriteBase /mon-sous-dossier/
 RewriteCond %{REQUEST_FILENAME} -s [OR]
 RewriteCond %{REQUEST_FILENAME} -l [OR]
 RewriteCond %{REQUEST_FILENAME} -d
