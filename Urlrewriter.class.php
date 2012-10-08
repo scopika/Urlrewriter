@@ -498,7 +498,7 @@ class Urlrewriter extends PluginsClassiques {
         $url = str_replace($find, '-', $url);
 
         //delete and replace rest of special chars
-        $find = array('/[^a-zA-Z0-9\-\/<>]/', '/[\-]+/', '/<[^>]*>/');
+        $find = array('/[^a-zA-Z0-9\.\-\/<>]/', '/[\-]+/', '/<[^>]*>/');
         $replace = array('', '-', '');
         $url = preg_replace($find, $replace, $url);
 
