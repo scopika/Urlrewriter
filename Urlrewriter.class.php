@@ -496,9 +496,10 @@ class Urlrewriter extends PluginsClassiques {
         // remove - for spaces and union characters
         $find = array(' ', '&', '\r\n', '\n', '+', ',');
         $url = str_replace($find, '-', $url);
-
+		$url = strtolower($url);
+		
         //delete and replace rest of special chars
-        $find = array('/[^a-zA-Z0-9\.\-\/<>]/', '/[\-]+/', '/<[^>]*>/');
+		$find = array('/[^a-zA-Z0-9\.\-\/<>]/', '/[\-]+/', '/<[^>]*>/');
         $replace = array('', '-', '');
         $url = preg_replace($find, $replace, $url);
 
